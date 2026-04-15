@@ -1,0 +1,186 @@
+{
+  "users": [
+    {
+      "_id": "e592decf-70ea-4d9f-b224-eada39eae253",
+      "name": "Deepanshu",
+      "username": "deepanshu",
+      "email": "deepany005@gmail.com",
+      "password": "$2a$10$FXMA5bAevo70WcIN0K4WveGXYigUzZESQdUX3hCm2KRxE4vXRSI9i",
+      "role": "admin",
+      "familyId": "f1292ede-da88-4a34-8b99-87df40ae5a11",
+      "requests": [],
+      "createdAt": "2026-04-14T04:00:20.329Z",
+      "updatedAt": "2026-04-14T04:00:20.329Z"
+    },
+    {
+      "_id": "ea450911-c886-4b9f-8c23-036fb935c35b",
+      "name": "kashish",
+      "username": "kashish",
+      "email": "kashish123@gmail.com",
+      "password": "$2a$10$vBaTX8ocpAhPYtMJaIEtpu8tmSspwdksaqYV4jSgDcFSGzXywqUfe",
+      "role": "member",
+      "familyId": "f1292ede-da88-4a34-8b99-87df40ae5a11",
+      "requests": [
+        {
+          "_id": "789cee2d-44de-4bfa-9e7d-82ee93b1c9e7",
+          "adminId": "e592decf-70ea-4d9f-b224-eada39eae253",
+          "adminName": "Deepanshu",
+          "familyId": "f1292ede-da88-4a34-8b99-87df40ae5a11",
+          "status": "accepted",
+          "createdAt": "2026-04-14T04:01:27.525Z"
+        }
+      ],
+      "createdAt": "2026-04-14T04:01:13.094Z",
+      "updatedAt": "2026-04-14T04:01:39.177Z"
+    },
+    {
+      "_id": "e3f80a1f-bcbe-41fa-b53f-2919f950edf4",
+      "name": "Himanshu",
+      "username": "himanshu",
+      "email": "abc@gmail.com",
+      "password": "$2a$10$6b3AgnNgdiqRos7wdNjtKuRAaLkNQ93tuqD8eKdOCGxRFlunf4LX2",
+      "role": "admin",
+      "familyId": "ec364262-3b95-494b-a2f3-65338b706082",
+      "requests": [],
+      "createdAt": "2026-04-15T07:44:25.176Z",
+      "updatedAt": "2026-04-15T07:44:25.176Z"
+    },
+    {
+      "_id": "ea37c447-12c3-4430-a7ed-f9f5f8548bbf",
+      "name": "Deepanshu yadav",
+      "username": "deepanshu___",
+      "email": "asd@gmail.com",
+      "password": "$2a$10$mJYgl7NLL6fd5l/6c7AgI.WetsETRj1RfSj8HwUQiyqqEtNaS5Knu",
+      "role": "member",
+      "familyId": "ec364262-3b95-494b-a2f3-65338b706082",
+      "requests": [
+        {
+          "_id": "dc00bf16-2335-4ed7-86bd-35ea624e9ec4",
+          "adminId": "e3f80a1f-bcbe-41fa-b53f-2919f950edf4",
+          "adminName": "Himanshu",
+          "familyId": "ec364262-3b95-494b-a2f3-65338b706082",
+          "status": "accepted",
+          "createdAt": "2026-04-15T07:51:39.266Z"
+        }
+      ],
+      "createdAt": "2026-04-15T07:51:26.484Z",
+      "updatedAt": "2026-04-15T07:51:46.701Z"
+    },
+    {
+      "_id": "8dab2374-8d02-4dce-ac07-4e5577592f14",
+      "name": "kashish",
+      "username": "kashish__",
+      "email": "kashishaggarwal991@gmail.com",
+      "password": "$2a$10$3p7b2ccRD.nOxq0j44YAwu0GFyTvEAjel9EmhTLrmJwy2XLuT5EE6",
+      "role": "admin",
+      "familyId": "6d6229b6-2b4e-4184-974a-5bdc5417d0cb",
+      "requests": [],
+      "createdAt": "2026-04-15T07:56:22.967Z",
+      "updatedAt": "2026-04-15T07:56:22.967Z"
+    },
+    {
+      "_id": "f500eef0-cc97-4c4a-a0c2-d0b3918f776e",
+      "name": "william",
+      "username": "william_1",
+      "email": "deepany305@gmail.com",
+      "password": "$2a$10$uipf9NCzM9oqhYKX0s7jB.U6NL3Gv7mzK9.3arYgZi3PSHu5eNu8G",
+      "role": "member",
+      "familyId": "6d6229b6-2b4e-4184-974a-5bdc5417d0cb",
+      "requests": [
+        {
+          "_id": "63ab414d-5873-4dea-875b-bb41a0e2eda3",
+          "adminId": "8dab2374-8d02-4dce-ac07-4e5577592f14",
+          "adminName": "kashish",
+          "familyId": "6d6229b6-2b4e-4184-974a-5bdc5417d0cb",
+          "status": "accepted",
+          "createdAt": "2026-04-15T07:58:05.516Z"
+        }
+      ],
+      "createdAt": "2026-04-15T07:57:50.433Z",
+      "updatedAt": "2026-04-15T07:58:26.034Z"
+    }
+  ],
+  "documents": [
+    {
+      "_id": "e389f2fa-df0b-4509-9cca-b90e9305e140",
+      "uploadedBy": "e3f80a1f-bcbe-41fa-b53f-2919f950edf4",
+      "familyId": "ec364262-3b95-494b-a2f3-65338b706082",
+      "originalName": "student.pdf",
+      "filePath": "1776239152417-210687709.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 311903,
+      "category": "Educational Certificate",
+      "summary": "Likely contains a student's academic record or certificate",
+      "extractedInfo": {
+        "Document Type": "Student Record",
+        "Issuing Authority": "School/University",
+        "Student Name": "Not Specified"
+      },
+      "tags": [
+        "student",
+        "certificate",
+        "education",
+        "academic",
+        "transcript"
+      ],
+      "aiStatus": "done",
+      "label": "",
+      "createdAt": "2026-04-15T07:45:52.426Z",
+      "updatedAt": "2026-04-15T07:45:53.295Z"
+    },
+    {
+      "_id": "7cf1d89d-ee6f-4a76-8d29-b3aff3bbbbe6",
+      "uploadedBy": "f500eef0-cc97-4c4a-a0c2-d0b3918f776e",
+      "familyId": "6d6229b6-2b4e-4184-974a-5bdc5417d0cb",
+      "originalName": "the_world_bringer_novel_2025_12_09_16_06_14.pdf",
+      "filePath": "1776239917372-517680135.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 87536,
+      "category": "Other",
+      "summary": "A novel titled 'The World Bringer' in PDF format",
+      "extractedInfo": {
+        "Document Type": "Novel",
+        "File Format": "PDF",
+        "Title": "The World Bringer"
+      },
+      "tags": [
+        "novel",
+        "ebook",
+        "pdf",
+        "fiction",
+        "literature"
+      ],
+      "aiStatus": "done",
+      "label": "",
+      "createdAt": "2026-04-15T07:58:37.377Z",
+      "updatedAt": "2026-04-15T07:58:39.205Z"
+    },
+    {
+      "_id": "53cbc687-6b7a-456f-a6e4-bd329d0f9988",
+      "uploadedBy": "8dab2374-8d02-4dce-ac07-4e5577592f14",
+      "familyId": "6d6229b6-2b4e-4184-974a-5bdc5417d0cb",
+      "originalName": "parents .pdf",
+      "filePath": "1776239946779-377489903.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 426860,
+      "category": "Identity Proof",
+      "summary": "Likely contains personal identification details of parents",
+      "extractedInfo": {
+        "Document Type": "Identification",
+        "Relationship": "Parents",
+        "Issuing Authority": "Unknown"
+      },
+      "tags": [
+        "parents",
+        "identification",
+        "family",
+        "personal",
+        "id"
+      ],
+      "aiStatus": "done",
+      "label": "",
+      "createdAt": "2026-04-15T07:59:06.820Z",
+      "updatedAt": "2026-04-15T07:59:07.669Z"
+    }
+  ]
+}
