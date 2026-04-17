@@ -10,14 +10,19 @@ const Spinner = () => (
   <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
 );
 
-function FamilyMembersSection() {
+function FamilyMembersSection({ currentUser, refreshKey, onRemoveMember, busyMemberId }) {
   const [members, setMembers] = useState([]);
 
   useEffect(() => {
+    if (!currentUser?.familyId) {
+      setMembers([]);
+      return;
+    }
+
     api.get('/api/family/members')
       .then(({ data }) => setMembers(Array.isArray(data) ? data : []))
       .catch(() => {});
-  }, []);
+  }, [currentUser?.familyId, refreshKey]);
 
   if (members.length === 0) return null;
 
@@ -47,13 +52,25 @@ function FamilyMembersSection() {
               <p className="truncate font-semibold text-white">{member.name}</p>
               <p className="truncate text-sm text-slate-400">@{member.username}</p>
             </div>
-            <span
-              className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
-                roleStyles[member.role] || roleStyles.member
-              }`}
-            >
-              {member.role}
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              <span
+                className={`rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
+                  roleStyles[member.role] || roleStyles.member
+                }`}
+              >
+                {member.role}
+              </span>
+              {currentUser?.role === 'admin' && member.role === 'member' && member._id !== currentUser?._id ? (
+                <button
+                  type="button"
+                  disabled={busyMemberId === member._id}
+                  onClick={() => onRemoveMember?.(member)}
+                  className="rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {busyMemberId === member._id ? 'Removing...' : 'Remove'}
+                </button>
+              ) : null}
+            </div>
           </div>
         ))}
       </div>
@@ -73,6 +90,7 @@ export default function Dashboard() {
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
   const [requestActionId, setRequestActionId] = useState('');
+  const [memberActionId, setMemberActionId] = useState('');
 
   const loadDocuments = useCallback(async () => {
     setLoading(true);
@@ -181,6 +199,48 @@ export default function Dashboard() {
     }
   };
 
+  const handleRemoveMember = async (member) => {
+    const ok = window.confirm(`Remove ${member.name} from your family?`);
+    if (!ok) return;
+
+    setMemberActionId(member._id);
+    setError('');
+
+    try {
+      await api.post('/api/family/remove-member', { memberId: member._id });
+      setRefreshTick((t) => t + 1);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to remove member.');
+    } finally {
+      setMemberActionId('');
+    }
+  };
+
+  const handleLeaveFamily = async () => {
+    const ok = window.confirm('Leave your current family?');
+    if (!ok) return;
+
+    setMemberActionId(user?._id || 'self');
+    setError('');
+
+    try {
+      const { data } = await api.post('/api/family/leave');
+      if (data?.user) {
+        updateUser({
+          familyId: data.user.familyId,
+          requests: Array.isArray(data.user.requests) ? data.user.requests : [],
+        });
+      } else {
+        await refreshUser();
+      }
+      setRefreshTick((t) => t + 1);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to leave family.');
+    } finally {
+      setMemberActionId('');
+    }
+  };
+
   const stats = useMemo(() => {
     const total = documents.length;
     const pending = documents.filter((doc) => doc.aiStatus === 'pending').length;
@@ -194,7 +254,10 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen">
-      <Navbar onAddMember={user?.role === 'admin' ? () => setAddMemberOpen(true) : undefined} />
+      <Navbar
+        onAddMember={user?.role === 'admin' ? () => setAddMemberOpen(true) : undefined}
+        familyRefreshKey={refreshTick}
+      />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-soft backdrop-blur">
@@ -268,7 +331,35 @@ export default function Dashboard() {
             {error}
           </div>
         ) : null}
-        {user?.familyId && <FamilyMembersSection />}
+        {user?.familyId && (
+          <FamilyMembersSection
+            currentUser={user}
+            refreshKey={refreshTick}
+            onRemoveMember={handleRemoveMember}
+            busyMemberId={memberActionId}
+          />
+        )}
+        {user?.role === 'member' && user?.familyId ? (
+          <section className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-soft backdrop-blur">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Family</p>
+                <h3 className="mt-2 text-2xl font-bold text-white">Leave Family</h3>
+                <p className="mt-2 text-sm text-slate-400">
+                  Leave your current family group and stop seeing its shared members in your vault.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={memberActionId === (user?._id || 'self')}
+                onClick={handleLeaveFamily}
+                className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-5 py-3 font-semibold text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {memberActionId === (user?._id || 'self') ? 'Leaving...' : 'Leave Family'}
+              </button>
+            </div>
+          </section>
+        ) : null}
         {user?.role === 'member' ? (
           <section className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-soft backdrop-blur">
             <div className="flex items-center justify-between gap-4">

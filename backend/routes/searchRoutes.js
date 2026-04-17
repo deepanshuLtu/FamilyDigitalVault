@@ -8,6 +8,16 @@ const {
   parseJsonResponse,
 } = require("../services/groqClient");
 
+const canAccessDocument = (user, document) => {
+  if (!user || !document) return false;
+
+  if (user.familyId) {
+    return document.familyId === user.familyId;
+  }
+
+  return document.uploadedBy === user._id;
+};
+
 /**
  * Uses Groq to convert a natural language query into search filters.
  * Falls back to simple regex search if AI fails.
@@ -65,9 +75,7 @@ router.get("/", protect, async (req, res) => {
       ? intent.tags.map((tag) => String(tag).toLowerCase()).filter(Boolean)
       : [];
 
-    const scopedDocuments = await listDocuments(
-      (document) => document.familyId === req.user.familyId
-    );
+    const scopedDocuments = await listDocuments((document) => canAccessDocument(req.user, document));
 
     const results = scopedDocuments
       .filter((document) => {

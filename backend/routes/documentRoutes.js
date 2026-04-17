@@ -14,6 +14,16 @@ const { protect } = require("../middleware/auth");
 const upload = require("../middleware/upload");
 const { processDocumentWithAI } = require("../services/groqService");
 
+const canAccessDocument = (user, document) => {
+  if (!user || !document) return false;
+
+  if (user.familyId) {
+    return document.familyId === user.familyId;
+  }
+
+  return document.uploadedBy === user._id;
+};
+
 // ── POST /api/documents/upload ───────────────────────────
 // Upload a file + trigger async AI processing
 router.post("/upload", protect, upload.single("file"), async (req, res) => {
@@ -65,7 +75,7 @@ router.post("/upload", protect, upload.single("file"), async (req, res) => {
 // Admin: all family docs | Member: only their own docs
 router.get("/", protect, async (req, res) => {
   try {
-    const docs = await listDocuments((document) => document.familyId === req.user.familyId);
+    const docs = await listDocuments((document) => canAccessDocument(req.user, document));
 
     res.json(docs);
   } catch (err) {
@@ -80,7 +90,7 @@ router.get("/:id", protect, async (req, res) => {
 
     if (!rawDoc) return res.status(404).json({ message: "Document not found" });
 
-    if (rawDoc.familyId !== req.user.familyId) {
+    if (!canAccessDocument(req.user, rawDoc)) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -98,9 +108,7 @@ router.delete("/:id", protect, async (req, res) => {
     const doc = await getRawDocumentById(req.params.id);
     if (!doc) return res.status(404).json({ message: "Document not found" });
 
-    // Access check
-    const sameFamily = doc.familyId === req.user.familyId;
-    if (!sameFamily) {
+    if (!canAccessDocument(req.user, doc)) {
       return res.status(403).json({ message: "Access denied" });
     }
 

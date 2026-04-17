@@ -71,7 +71,7 @@ const roleStyles = {
   member: 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-400/30',
 };
 
-export default function Navbar({ onAddMember }) {
+export default function Navbar({ onAddMember, familyRefreshKey = 0 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [familyMembers, setFamilyMembers] = useState([]);
@@ -86,7 +86,7 @@ export default function Navbar({ onAddMember }) {
     api.get('/api/family/members')
       .then(({ data }) => setFamilyMembers(Array.isArray(data) ? data : []))
       .catch(() => setFamilyMembers([]));
-  }, [user?.familyId]);
+  }, [familyRefreshKey, user?.familyId]);
 
   const handleLogout = () => {
     logout();
