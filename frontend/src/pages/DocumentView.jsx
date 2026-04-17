@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
+import { addToEmergency, removeFromEmergency, checkEmergency } from '../api/emergency';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 
 const Spinner = () => (
@@ -36,9 +38,13 @@ const formatBytes = (bytes) => {
 export default function DocumentView() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [inEmergency, setInEmergency] = useState(false);
+  const [emergencyLoading, setEmergencyLoading] = useState(false);
+  const [actionMessage, setActionMessage] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -63,6 +69,35 @@ export default function DocumentView() {
     };
   }, [id]);
 
+  // Check emergency status when document loads
+  useEffect(() => {
+    if (!document || user?.role !== 'admin') return;
+    checkEmergency(document._id)
+      .then(({ data }) => setInEmergency(data.inEmergency))
+      .catch(() => setInEmergency(false));
+  }, [document, user?.role]);
+
+  const handleEmergencyToggle = async () => {
+    if (!document || user?.role !== 'admin') return;
+    setEmergencyLoading(true);
+    setActionMessage('');
+    try {
+      if (inEmergency) {
+        await removeFromEmergency(document._id);
+        setInEmergency(false);
+        setActionMessage('Removed from Emergency');
+      } else {
+        await addToEmergency(document._id);
+        setInEmergency(true);
+        setActionMessage('Added to Emergency');
+      }
+    } catch (err) {
+      setActionMessage(err?.response?.data?.message || 'Operation failed');
+    } finally {
+      setEmergencyLoading(false);
+    }
+  };
+
   const fileUrl = useMemo(() => {
     if (!document?.filePath) return '';
     return `http://localhost:5000/uploads/${document.filePath}`;
@@ -80,13 +115,35 @@ export default function DocumentView() {
       <Navbar />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <button
-          type="button"
-          onClick={() => navigate('/dashboard')}
-          className="mb-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10 hover:text-white"
-        >
-          ← Back to dashboard
-        </button>
+        <div className="mb-6 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10 hover:text-white"
+          >
+            ← Back to dashboard
+          </button>
+          {user?.role === 'admin' && document && (
+            <button
+              type="button"
+              disabled={emergencyLoading}
+              onClick={handleEmergencyToggle}
+              className={`flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                inEmergency
+                  ? 'border-rose-400/30 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30'
+                  : 'border-amber-400/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20'
+              }`}
+            >
+              <span className="text-lg">{inEmergency ? '🛡' : '⚠'}</span>
+              {emergencyLoading ? 'Saving...' : inEmergency ? 'Remove from Emergency' : 'Add to Emergency'}
+            </button>
+          )}
+        </div>
+        {actionMessage && (
+          <p className={`mb-4 text-sm font-medium ${actionMessage.includes('failed') ? 'text-rose-300' : 'text-emerald-300'}`}>
+            {actionMessage}
+          </p>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center rounded-3xl border border-white/10 bg-white/5 py-20 text-slate-300">

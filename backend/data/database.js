@@ -5,6 +5,7 @@ const DB_PATH = path.join(__dirname, "..", "db.json");
 const DEFAULT_DB = {
   users: [],
   documents: [],
+  emergencyDocuments: [],
 };
 
 let operationQueue = Promise.resolve();
@@ -15,6 +16,7 @@ const clone = (value) =>
 const normalizeDb = (data = {}) => ({
   users: Array.isArray(data.users) ? data.users : [],
   documents: Array.isArray(data.documents) ? data.documents : [],
+  emergencyDocuments: Array.isArray(data.emergencyDocuments) ? data.emergencyDocuments : [],
 });
 
 const ensureDbFile = async () => {

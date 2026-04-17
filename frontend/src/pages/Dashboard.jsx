@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
+import { getEmergencyDocs, addToEmergency, removeFromEmergency } from '../api/emergency';
 import Navbar from '../components/Navbar';
 import DocumentCard from '../components/DocumentCard';
 import UploadModal from '../components/UploadModal';
@@ -91,6 +92,8 @@ export default function Dashboard() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [requestActionId, setRequestActionId] = useState('');
   const [memberActionId, setMemberActionId] = useState('');
+  const [emergencyIds, setEmergencyIds] = useState(new Set());
+  const [emergencyLoading, setEmergencyLoading] = useState(false);
 
   const loadDocuments = useCallback(async () => {
     setLoading(true);
@@ -115,6 +118,25 @@ export default function Dashboard() {
     // does not trigger a full refetch on every keystroke.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTick, user?.familyId]);
+
+  // Fetch emergency document IDs on load (for admin badge)
+  const loadEmergencyIds = useCallback(async () => {
+    if (user?.role !== 'admin' || !user?.familyId) {
+      setEmergencyIds(new Set());
+      return;
+    }
+    try {
+      const { data } = await getEmergencyDocs();
+      const ids = new Set((data.documents || []).map((doc) => doc._id));
+      setEmergencyIds(ids);
+    } catch {
+      setEmergencyIds(new Set());
+    }
+  }, [user?.role, user?.familyId]);
+
+  useEffect(() => {
+    loadEmergencyIds();
+  }, [loadEmergencyIds]);
   
   
 
@@ -213,6 +235,28 @@ export default function Dashboard() {
       setError(err?.response?.data?.message || 'Failed to remove member.');
     } finally {
       setMemberActionId('');
+    }
+  };
+
+  const handleEmergencyToggle = async (docId) => {
+    if (user?.role !== 'admin') return;
+    setEmergencyLoading(true);
+    try {
+      if (emergencyIds.has(docId)) {
+        await removeFromEmergency(docId);
+        setEmergencyIds((prev) => {
+          const next = new Set(prev);
+          next.delete(docId);
+          return next;
+        });
+      } else {
+        await addToEmergency(docId);
+        setEmergencyIds((prev) => new Set(prev).add(docId));
+      }
+    } catch (err) {
+      alert(err?.response?.data?.message || 'Failed to update emergency status');
+    } finally {
+      setEmergencyLoading(false);
     }
   };
 
@@ -431,7 +475,11 @@ export default function Dashboard() {
           ) : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {displayedDocs.map((doc) => (
-                <DocumentCard key={doc._id} document={doc} onDelete={handleDelete} />
+                <DocumentCard
+                  key={doc._id}
+                  document={doc}
+                  onDelete={handleDelete}
+                />
               ))}
             </div>
           )}

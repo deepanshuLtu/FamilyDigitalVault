@@ -68,6 +68,9 @@ router.get("/", protect, async (req, res) => {
     // Get search intent from AI
     const intent = await extractSearchIntent(q);
 
+    // Strip any accidental # prefix that AI may echo back
+    const stripHash = (str) => String(str).replace(/^#/, "").toLowerCase();
+
     const keywords = Array.isArray(intent.keywords)
       ? intent.keywords.map((keyword) => String(keyword).toLowerCase()).filter(Boolean)
       : [];

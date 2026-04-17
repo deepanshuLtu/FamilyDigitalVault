@@ -61,10 +61,11 @@
 //   );
 // }
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import { getEmergencyDocs, removeFromEmergency } from '../api/emergency';
 
 const roleStyles = {
   admin: 'bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30',
@@ -76,6 +77,12 @@ export default function Navbar({ onAddMember, familyRefreshKey = 0 }) {
   const navigate = useNavigate();
   const [familyMembers, setFamilyMembers] = useState([]);
   const [showFamily, setShowFamily] = useState(false);
+  const [showEmergency, setShowEmergency] = useState(false);
+  const [emergencyDocs, setEmergencyDocs] = useState([]);
+  const [emergencyLoading, setEmergencyLoading] = useState(false);
+  const [emergencyError, setEmergencyError] = useState('');
+  const [removingId, setRemovingId] = useState('');
+  const emergencyBtnRef = useRef(null);
 
   useEffect(() => {
     if (!user?.familyId) {
@@ -88,9 +95,58 @@ export default function Navbar({ onAddMember, familyRefreshKey = 0 }) {
       .catch(() => setFamilyMembers([]));
   }, [familyRefreshKey, user?.familyId]);
 
+  // Click outside to close emergency panel
+  useEffect(() => {
+    if (!showEmergency) return;
+    const handleClick = (e) => {
+      if (emergencyBtnRef.current && !emergencyBtnRef.current.contains(e.target)) {
+        setShowEmergency(false);
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [showEmergency]);
+
+  // Fetch emergency docs when panel opens
+  useEffect(() => {
+    if (!showEmergency) {
+      setEmergencyDocs([]);
+      return;
+    }
+    setEmergencyLoading(true);
+    setEmergencyError('');
+    getEmergencyDocs()
+      .then(({ data }) => {
+        setEmergencyDocs(Array.isArray(data.documents) ? data.documents : []);
+      })
+      .catch((err) => {
+        setEmergencyError(err?.response?.data?.message || 'Failed to load emergency documents');
+      })
+      .finally(() => {
+        setEmergencyLoading(false);
+      });
+  }, [showEmergency]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleRemoveFromEmergency = async (documentId) => {
+    setRemovingId(documentId);
+    try {
+      await removeFromEmergency(documentId);
+      setEmergencyDocs((prev) => prev.filter((doc) => doc._id !== documentId));
+    } catch (err) {
+      alert(err?.response?.data?.message || 'Failed to remove from emergency');
+    } finally {
+      setRemovingId('');
+    }
+  };
+
+  const handleEmergencyDocClick = (docId) => {
+    setShowEmergency(false);
+    navigate(`/documents/${docId}`);
   };
 
   return (
@@ -138,6 +194,71 @@ export default function Navbar({ onAddMember, familyRefreshKey = 0 }) {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Emergency tab */}
+              {user.familyId && (
+                <div className="relative" ref={emergencyBtnRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEmergency((v) => !v)}
+                    className="flex items-center gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-500/20 hover:text-white"
+                  >
+                    <span className="text-lg">⚠</span>
+                    <span>Emergency</span>
+                    {emergencyDocs.length > 0 && (
+                      <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs text-white">
+                        {emergencyDocs.length}
+                      </span>
+                    )}
+                  </button>
+
+                  {showEmergency && (
+                    <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-2xl border border-rose-400/20 bg-slate-900 p-3 shadow-xl">
+                      <p className="mb-3 text-sm font-bold text-rose-300">🚨 Emergency Documents</p>
+                      {emergencyLoading ? (
+                        <div className="flex items-center justify-center py-4 text-slate-400">
+                          <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        </div>
+                      ) : emergencyError ? (
+                        <p className="text-sm text-rose-300">{emergencyError}</p>
+                      ) : emergencyDocs.length === 0 ? (
+                        <p className="text-sm text-slate-400">No emergency documents added yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {emergencyDocs.map((doc) => (
+                            <div
+                              key={doc._id}
+                              className="group inline-flex w-fit max-w-xs items-center justify-between rounded-xl border border-white/10 bg-slate-950/60 p-3 transition hover:border-rose-400/30"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => handleEmergencyDocClick(doc._id)}
+                                className="text-left"
+                              >
+                                <p className="truncate text-sm font-medium text-white">{doc.originalName}</p>
+                                <p className="truncate text-xs text-slate-400">{doc.category || 'Uncategorized'}</p>
+                              </button>
+                              {user.role === 'admin' && (
+                                <button
+                                  type="button"
+                                  disabled={removingId === doc._id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveFromEmergency(doc._id);
+                                  }}
+                                  className="hidden rounded-lg border border-rose-400/30 bg-rose-500/10 px-2 py-1 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/20 group-hover:block disabled:cursor-not-allowed disabled:opacity-60 sm:block"
+                                >
+                                  {removingId === doc._id ? 'Removing...' : '✕'}
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

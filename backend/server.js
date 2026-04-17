@@ -24,6 +24,7 @@ app.use("/api/documents", require("./routes/documentRoutes"));
 app.use("/api/family",    require("./routes/familyRoutes"));
 app.use("/api/search",    require("./routes/searchRoutes"));
 app.use("/api/users",     require("./routes/userRoutes"));
+app.use("/api/emergency", require("./routes/emergencyRoutes"));
 
 // ── Health Check ────────────────────────────────────────
 app.get("/", (req, res) => {

@@ -10,6 +10,7 @@ const {
   listDocuments,
   updateDocumentById,
 } = require("../data/documents");
+const { getDatabase, mutateDatabase } = require("../data/database");
 const { protect } = require("../middleware/auth");
 const upload = require("../middleware/upload");
 const { processDocumentWithAI } = require("../services/groqService");
@@ -129,6 +130,16 @@ router.delete("/:id", protect, async (req, res) => {
     }
 
     await deleteDocumentById(req.params.id);
+
+    // Clean up: remove document ID from emergencyDocuments
+    await mutateDatabase(async (db) => {
+      const emergencyDocs = db.emergencyDocuments || [];
+      const index = emergencyDocs.indexOf(req.params.id);
+      if (index !== -1) {
+        db.emergencyDocuments.splice(index, 1);
+      }
+    });
+
     res.json({ message: "Document deleted" });
   } catch (err) {
     res.status(500).json({ message: "Delete failed" });
