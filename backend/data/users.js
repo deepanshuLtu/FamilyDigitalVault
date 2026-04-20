@@ -69,9 +69,9 @@ const countUsers = async () => {
   return db.users.length;
 };
 
-const createUser = async ({ name, username, email, password, role = "member", familyId }) => {
+const createUser = async ({ name, username, email, password, role = "member", familyId, prehashed = false }) => {
   const now = new Date().toISOString();
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = prehashed ? password : await bcrypt.hash(password, 10);
   const normalizedEmail = sanitizeEmail(email);
   const normalizedUsername = sanitizeUsername(username);
 

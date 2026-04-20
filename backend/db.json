@@ -2,50 +2,22 @@
   "users": [
     {},
     {
-      "_id": "dfb2522c-5a16-4c06-9ce4-c592d7fedb21",
-      "name": "Deepanshu",
+      "_id": "8511d2f3-ec7d-4519-9aa2-36e3dca94acd",
+      "name": "Deepanshu Yadav",
       "username": "deepanshu",
-      "email": "deepany005@gmail.com",
-      "password": "$2a$10$Cr87.jEk2OJHyVBf1RQTx.LdM4VS6c9/9P4DTXNwqcFk6MvQ.xW8e",
+      "email": "ponamy84@gmail.com",
+      "password": "$2a$10$2nRLt4gCjEPPlw1kKIkG7uoM6.NMi0voqV23MJ52SGxxvjPX1xKMW",
       "role": "admin",
-      "familyId": "83131865-a87d-4608-9ac5-e3314e17b577",
+      "familyId": "b07a92ac-5d3d-4ea6-b655-44b847967753",
       "requests": [],
-      "createdAt": "2026-04-20T10:04:55.172Z",
-      "updatedAt": "2026-04-20T10:04:55.172Z"
+      "createdAt": "2026-04-20T18:12:14.498Z",
+      "updatedAt": "2026-04-20T18:12:14.498Z"
     }
   ],
   "documents": [
-    {},
-    {
-      "_id": "3224200a-036a-461e-98a7-b9a439c6d320",
-      "uploadedBy": "dfb2522c-5a16-4c06-9ce4-c592d7fedb21",
-      "familyId": "83131865-a87d-4608-9ac5-e3314e17b577",
-      "originalName": "the_world_bringer_novel_2025_12_09_16_06_14.pdf",
-      "filePath": "1776679505225-323804135.pdf",
-      "fileType": "application/pdf",
-      "fileSize": 87536,
-      "category": "Other",
-      "summary": "A novel titled 'The World Bringer' in PDF format",
-      "extractedInfo": {
-        "Document Type": "Novel",
-        "Title": "The World Bringer",
-        "Upload Date": "2025-12-09"
-      },
-      "tags": [
-        "novel",
-        "ebook",
-        "pdf",
-        "fiction",
-        "literature"
-      ],
-      "aiStatus": "done",
-      "label": "",
-      "createdAt": "2026-04-20T10:05:05.236Z",
-      "updatedAt": "2026-04-20T10:05:06.431Z"
-    }
+    {}
   ],
   "emergencyDocuments": [
-    {},
-    "3224200a-036a-461e-98a7-b9a439c6d320"
+    {}
   ]
 }

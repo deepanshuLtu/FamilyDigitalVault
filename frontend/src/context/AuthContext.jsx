@@ -27,6 +27,12 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (credentials) => {
+    if (credentials?.token) {
+      localStorage.setItem('token', credentials.token);
+      setUser(credentials);
+      return credentials;
+    }
+
     const { data } = await api.post('/api/auth/login', credentials);
     localStorage.setItem('token', data.token);
     setUser(data);
@@ -34,9 +40,17 @@ export function AuthProvider({ children }) {
   };
 
   const signup = async (userData) => {
+    if (userData?.token) {
+      localStorage.setItem('token', userData.token);
+      setUser(userData);
+      return userData;
+    }
+
     const { data } = await api.post('/api/auth/signup', userData);
-    localStorage.setItem('token', data.token);
-    setUser(data);
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+      setUser(data);
+    }
     return data;
   };
 
