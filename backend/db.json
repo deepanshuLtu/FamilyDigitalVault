@@ -2,41 +2,49 @@
   "users": [
     {},
     {
-      "_id": "e396d681-d2e9-461a-ba0f-856e351d30cd",
+      "_id": "dfb2522c-5a16-4c06-9ce4-c592d7fedb21",
       "name": "Deepanshu",
       "username": "deepanshu",
       "email": "deepany005@gmail.com",
-      "password": "$2a$10$ork.LX/D.EkEi4MPNw5ACOvPJhlGeLqD8eGk2iAR6GSZ1tMoyyfRe",
+      "password": "$2a$10$Cr87.jEk2OJHyVBf1RQTx.LdM4VS6c9/9P4DTXNwqcFk6MvQ.xW8e",
       "role": "admin",
-      "familyId": "5c9157af-3394-4e0a-bf26-48d7f7441afc",
+      "familyId": "83131865-a87d-4608-9ac5-e3314e17b577",
       "requests": [],
-      "createdAt": "2026-04-17T20:19:03.609Z",
-      "updatedAt": "2026-04-17T20:19:03.609Z"
-    },
-    {
-      "_id": "3a52e249-6fcd-42cc-a2df-1d7c85788e7f",
-      "name": "kashish",
-      "username": "kashish",
-      "email": "kashishaggarwal991@gmail.com",
-      "password": "$2a$10$QO/JBPDgi.Hwb/VoyTMJueSkM2uyeAl03qNWkpThJazW7KbhNjdCm",
-      "role": "member",
-      "familyId": "5c9157af-3394-4e0a-bf26-48d7f7441afc",
-      "requests": [
-        {
-          "_id": "0eb5cdb3-b69a-4743-a932-ecf58b68ea7a",
-          "adminId": "e396d681-d2e9-461a-ba0f-856e351d30cd",
-          "adminName": "Deepanshu",
-          "familyId": "5c9157af-3394-4e0a-bf26-48d7f7441afc",
-          "status": "accepted",
-          "createdAt": "2026-04-17T21:14:55.929Z"
-        }
-      ],
-      "createdAt": "2026-04-17T21:14:07.790Z",
-      "updatedAt": "2026-04-17T21:15:07.034Z"
+      "createdAt": "2026-04-20T10:04:55.172Z",
+      "updatedAt": "2026-04-20T10:04:55.172Z"
     }
   ],
   "documents": [
-    {}
+    {},
+    {
+      "_id": "3224200a-036a-461e-98a7-b9a439c6d320",
+      "uploadedBy": "dfb2522c-5a16-4c06-9ce4-c592d7fedb21",
+      "familyId": "83131865-a87d-4608-9ac5-e3314e17b577",
+      "originalName": "the_world_bringer_novel_2025_12_09_16_06_14.pdf",
+      "filePath": "1776679505225-323804135.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 87536,
+      "category": "Other",
+      "summary": "A novel titled 'The World Bringer' in PDF format",
+      "extractedInfo": {
+        "Document Type": "Novel",
+        "Title": "The World Bringer",
+        "Upload Date": "2025-12-09"
+      },
+      "tags": [
+        "novel",
+        "ebook",
+        "pdf",
+        "fiction",
+        "literature"
+      ],
+      "aiStatus": "done",
+      "label": "",
+      "createdAt": "2026-04-20T10:05:05.236Z",
+      "updatedAt": "2026-04-20T10:05:06.431Z"
+    }
   ],
-  "emergencyDocuments": []
+  "emergencyDocuments": [
+    {}
+  ]
 }

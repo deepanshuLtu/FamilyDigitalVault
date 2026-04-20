@@ -294,9 +294,9 @@ function Info({ label, value }) {
 
 function MetaRow({ label, value }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-2 last:border-0 last:pb-0">
-      <span className="text-slate-400">{label}</span>
-      <span className="max-w-[60%] text-right font-medium text-slate-100">{value || '—'}</span>
+    <div className="flex flex-col items-start justify-between gap-1 border-b border-white/10 pb-2 last:border-0 last:pb-0">
+      <span className="text-slate-400 shrink-0">{label}</span>
+      <span className="w-full break-all text-left font-medium text-slate-100">{value || '—'}</span>
     </div>
   );
 }
