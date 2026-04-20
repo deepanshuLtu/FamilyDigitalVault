@@ -229,34 +229,39 @@ export default function Navbar({ onAddMember, familyRefreshKey = 0 }) {
                         <p className="text-sm text-slate-400">No emergency documents added yet</p>
                       ) : (
                         <div className="space-y-2">
-                          {emergencyDocs.map((doc) => (
-                            <div
-                              key={doc._id}
-                              className="group inline-flex w-fit max-w-xs items-center justify-between rounded-xl border border-white/10 bg-slate-950/60 p-3 transition hover:border-rose-400/30"
-                            >
-                              <button
-                                type="button"
-                                onClick={() => handleEmergencyDocClick(doc._id)}
-                                className="text-left"
+                          {emergencyDocs.map((doc) => {
+                            const displayName = doc.label?.trim() || doc.originalName || 'Untitled document';
+                            return (
+                              <div
+                                key={doc._id}
+                                className="group relative flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border border-white/10 bg-slate-950/60 p-3 transition hover:border-rose-400/50 hover:bg-rose-500/10"
                               >
-                                <p className="truncate text-sm font-medium text-white">{doc.originalName}</p>
-                                <p className="truncate text-xs text-slate-400">{doc.category || 'Uncategorized'}</p>
-                              </button>
-                              {user.role === 'admin' && (
                                 <button
                                   type="button"
-                                  disabled={removingId === doc._id}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRemoveFromEmergency(doc._id);
-                                  }}
-                                  className="hidden rounded-lg border border-rose-400/30 bg-rose-500/10 px-2 py-1 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/20 group-hover:block disabled:cursor-not-allowed disabled:opacity-60 sm:block"
+                                  onClick={() => handleEmergencyDocClick(doc._id)}
+                                  className="flex-1 text-left"
                                 >
-                                  {removingId === doc._id ? 'Removing...' : '✕'}
+                                  <p className="truncate text-sm font-medium text-white group-hover:text-rose-200">
+                                    {displayName}
+                                  </p>
+                                  <p className="truncate text-xs text-slate-400">{doc.category || 'Uncategorized'}</p>
                                 </button>
-                              )}
-                            </div>
-                          ))}
+                                {user.role === 'admin' && (
+                                  <button
+                                    type="button"
+                                    disabled={removingId === doc._id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveFromEmergency(doc._id);
+                                    }}
+                                    className="hidden shrink-0 rounded-lg border border-rose-400/30 bg-rose-500/10 px-2 py-1 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/20 group-hover:block disabled:cursor-not-allowed disabled:opacity-60 sm:block"
+                                  >
+                                    {removingId === doc._id ? 'Removing...' : '✕'}
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

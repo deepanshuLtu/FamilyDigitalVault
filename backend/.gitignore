@@ -3,4 +3,4 @@ uploads/
 .env
 build/
 dist/
-db.jso
+db.json
