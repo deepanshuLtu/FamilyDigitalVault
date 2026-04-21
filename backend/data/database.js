@@ -6,6 +6,7 @@ const DEFAULT_DB = {
   users: [],
   documents: [],
   emergencyDocuments: [],
+  pins: [],
 };
 
 let operationQueue = Promise.resolve();
@@ -17,6 +18,7 @@ const normalizeDb = (data = {}) => ({
   users: Array.isArray(data.users) ? data.users : [],
   documents: Array.isArray(data.documents) ? data.documents : [],
   emergencyDocuments: Array.isArray(data.emergencyDocuments) ? data.emergencyDocuments : [],
+  pins: Array.isArray(data.pins) ? data.pins : [],
 });
 
 const ensureDbFile = async () => {

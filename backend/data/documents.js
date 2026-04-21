@@ -16,8 +16,19 @@ const buildUploader = (user) => {
   };
 };
 
+const sanitizeDocument = (document) => {
+  if (!document) return null;
+
+  // Security: never return the document password hash in API-facing data.
+  const { documentPassword, ...safeDocument } = document;
+  return {
+    ...safeDocument,
+    isPasswordProtected: Boolean(document.isPasswordProtected),
+  };
+};
+
 const populateDocument = (document, users) => ({
-  ...document,
+  ...sanitizeDocument(document),
   uploadedBy: buildUploader(users.find((user) => user._id === document.uploadedBy)),
 });
 
@@ -39,12 +50,14 @@ const createDocument = async (payload) => {
       tags: Array.isArray(payload.tags) ? payload.tags : [],
       aiStatus: payload.aiStatus || "pending",
       label: payload.label || "",
+      isPasswordProtected: Boolean(payload.isPasswordProtected),
+      documentPassword: payload.documentPassword || null,
       createdAt: now,
       updatedAt: now,
     };
 
     db.documents.push(document);
-    return { ...document };
+    return sanitizeDocument(document);
   });
 };
 
@@ -52,6 +65,8 @@ const getRawDocumentById = async (id) => {
   const db = await getDatabase();
   return db.documents.find((document) => document._id === id) || null;
 };
+
+const getRawDocumentWithPassword = async (id) => getRawDocumentById(id);
 
 const getDocumentById = async (id) => {
   const db = await getDatabase();
@@ -76,7 +91,7 @@ const updateDocumentById = async (id, updates) =>
       updatedAt: new Date().toISOString(),
     });
 
-    return { ...document };
+    return sanitizeDocument(document);
   });
 
 const deleteDocumentById = async (id) =>
@@ -93,6 +108,8 @@ module.exports = {
   deleteDocumentById,
   getDocumentById,
   getRawDocumentById,
+  getRawDocumentWithPassword,
   listDocuments,
+  sanitizeDocument,
   updateDocumentById,
 };

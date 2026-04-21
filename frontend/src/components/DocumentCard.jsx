@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Pin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const categoryStyles = {
@@ -24,7 +25,14 @@ const Spinner = () => (
   <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
 );
 
-export default function DocumentCard({ document, onDelete }) {
+export default function DocumentCard({
+  document,
+  onDelete,
+  isPinned = false,
+  onPinToggle,
+  pinLoading = false,
+  variant = 'default',
+}) {
   const { user } = useAuth();
   const uploaderId = document?.uploadedBy?._id || document?.uploadedBy?.id || document?.uploadedBy;
   const canDelete = user?.role === 'admin' || (user?._id && uploaderId && String(user._id) === String(uploaderId));
@@ -33,12 +41,50 @@ export default function DocumentCard({ document, onDelete }) {
 
   const statusLabel =
     document?.aiStatus === 'pending' ? 'Processing' : document?.aiStatus === 'done' ? 'Ready' : 'Failed';
+  const isPinnedVariant = variant === 'pinned';
 
   return (
-    <article className="group overflow-hidden rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-soft transition duration-300 hover:-translate-y-1 hover:border-sky-400/30 hover:bg-slate-900">
+    <article
+      className={`group relative overflow-hidden rounded-3xl border p-5 pr-14 shadow-soft transition duration-300 hover:-translate-y-1 hover:border-sky-400/30 hover:bg-slate-900 ${
+        isPinnedVariant
+          ? 'border-l-4 border-l-amber-400/70 border-white/10 bg-amber-500/[0.06]'
+          : 'border-white/10 bg-slate-900/70'
+      }`}
+    >
+      {onPinToggle ? (
+        <button
+          type="button"
+          title={isPinned ? 'Unpin document' : 'Pin document'}
+          aria-label={isPinned ? 'Unpin document' : 'Pin document'}
+          disabled={pinLoading}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onPinToggle(document._id, isPinned);
+          }}
+          className={`absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60 ${
+            isPinned ? 'text-amber-300' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          {pinLoading ? (
+            <Spinner />
+          ) : (
+            <Pin className="h-5 w-5" fill={isPinned ? 'currentColor' : 'none'} />
+          )}
+        </button>
+      ) : null}
+
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <Link to={`/documents/${document._id}`} className="block">
+        <div className="min-w-0 flex-1">
+          <Link to={`/documents/${document._id}`} className="flex min-w-0 items-center gap-2">
+            {document.isPasswordProtected ? (
+              <span
+                title="Password protected"
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-400/30 bg-amber-500/10 text-sm text-amber-200"
+              >
+                🔒
+              </span>
+            ) : null}
             <h3 className="truncate text-lg font-semibold text-white transition group-hover:text-sky-300">
               {displayName}
             </h3>

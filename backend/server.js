@@ -21,7 +21,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // ── API Routes ──────────────────────────────────────────
 app.use("/api/auth",      require("./routes/authRoutes"));
 app.use("/api/documents", require("./routes/documentRoutes"));
+app.use("/api/documents", require("./routes/documentPasswordRoutes"));
 app.use("/api/family",    require("./routes/familyRoutes"));
+app.use("/api/pins",      require("./routes/pinRoutes"));
 app.use("/api/search",    require("./routes/searchRoutes"));
 app.use("/api/users",     require("./routes/userRoutes"));
 app.use("/api/emergency", require("./routes/emergencyRoutes"));

@@ -12,12 +12,164 @@
       "requests": [],
       "createdAt": "2026-04-20T18:12:14.498Z",
       "updatedAt": "2026-04-20T18:12:14.498Z"
+    },
+    {
+      "_id": "a5e00466-2589-403c-9c5e-072164f08a55",
+      "name": "kashish",
+      "username": "kashish",
+      "email": "kashishaggarwal991@gmail.com",
+      "password": "$2a$10$W5qTqdILQkhewEAsVLLFv.Ai8eSlAi2FCQcDLuAIEy30mwnxJovcG",
+      "role": "member",
+      "familyId": "b07a92ac-5d3d-4ea6-b655-44b847967753",
+      "requests": [
+        {
+          "_id": "154929c9-291d-48f7-9f25-44ccfd6bbf7d",
+          "adminId": "8511d2f3-ec7d-4519-9aa2-36e3dca94acd",
+          "adminName": "Deepanshu Yadav",
+          "familyId": "b07a92ac-5d3d-4ea6-b655-44b847967753",
+          "status": "accepted",
+          "createdAt": "2026-04-20T19:59:11.987Z"
+        }
+      ],
+      "createdAt": "2026-04-20T19:58:51.735Z",
+      "updatedAt": "2026-04-20T19:59:35.694Z"
     }
   ],
   "documents": [
-    {}
+    {},
+    {
+      "_id": "963a25e4-b081-4892-a011-d88c49d78662",
+      "uploadedBy": "8511d2f3-ec7d-4519-9aa2-36e3dca94acd",
+      "familyId": "b07a92ac-5d3d-4ea6-b655-44b847967753",
+      "originalName": "student.pdf",
+      "filePath": "1776715164546-976856547.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 311903,
+      "category": "Educational Certificate",
+      "summary": "Likely contains a student's academic record or certificate",
+      "extractedInfo": {
+        "Document Type": "Student Record",
+        "Issuing Authority": "School/University",
+        "Student Name": "Unknown"
+      },
+      "tags": [
+        "student",
+        "certificate",
+        "education",
+        "academic",
+        "transcript"
+      ],
+      "aiStatus": "done",
+      "label": "",
+      "createdAt": "2026-04-20T19:59:24.564Z",
+      "updatedAt": "2026-04-21T05:13:11.528Z",
+      "isPasswordProtected": false,
+      "documentPassword": null
+    },
+    {
+      "_id": "7f712427-dd46-4888-914c-fc50c9ac1ee5",
+      "uploadedBy": "8511d2f3-ec7d-4519-9aa2-36e3dca94acd",
+      "familyId": "b07a92ac-5d3d-4ea6-b655-44b847967753",
+      "originalName": "parents .pdf",
+      "filePath": "1776748341803-203548990.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 426860,
+      "category": "Identity Proof",
+      "summary": "Document containing personal identification information of parents",
+      "extractedInfo": {
+        "Document Type": "Identification",
+        "Issuing Authority": "Government",
+        "Relationship": "Parents"
+      },
+      "tags": [
+        "identity",
+        "parents",
+        "personal",
+        "document",
+        "family"
+      ],
+      "aiStatus": "done",
+      "label": "",
+      "isPasswordProtected": true,
+      "documentPassword": "$2a$10$4AA6QrBD.t53AKU0kmwM9uIcND9DmCWYRwOCDn8/rVIPlb7jVFJz.",
+      "createdAt": "2026-04-21T05:12:22.068Z",
+      "updatedAt": "2026-04-21T05:12:23.249Z"
+    },
+    {
+      "_id": "af53db31-0cac-4d43-8a8f-01ea165bf934",
+      "uploadedBy": "a5e00466-2589-403c-9c5e-072164f08a55",
+      "familyId": "b07a92ac-5d3d-4ea6-b655-44b847967753",
+      "originalName": "BSMAT203D - MATH-III for CSE (2).pdf",
+      "filePath": "1776748611346-366811718.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 608527,
+      "category": "Educational Certificate",
+      "summary": "Likely contains notes or study material for a mathematics course",
+      "extractedInfo": {
+        "Document Type": "Study Material",
+        "Course Name": "MATH-III for CSE",
+        "File Format": "PDF"
+      },
+      "tags": [
+        "math",
+        "cse",
+        "study",
+        "material",
+        "notes"
+      ],
+      "aiStatus": "done",
+      "label": "Maths syllabus",
+      "isPasswordProtected": true,
+      "documentPassword": "$2a$10$W/LsRPfU4KXA9mjnU3ZSz.doE6DgikgjHHF3J6WNapJJ3vejIkujK",
+      "createdAt": "2026-04-21T05:16:51.586Z",
+      "updatedAt": "2026-04-21T05:19:25.220Z"
+    },
+    {
+      "_id": "991c9c12-46ac-4fff-b3d9-20bec46d39de",
+      "uploadedBy": "8511d2f3-ec7d-4519-9aa2-36e3dca94acd",
+      "familyId": "b07a92ac-5d3d-4ea6-b655-44b847967753",
+      "originalName": "student.pdf",
+      "filePath": "1776749933682-365868198.pdf",
+      "fileType": "application/pdf",
+      "fileSize": 311903,
+      "category": "Educational Certificate",
+      "summary": "This document likely contains a student's academic record or certificate",
+      "extractedInfo": {
+        "Document Type": "Student Record",
+        "Issuing Authority": "School/University",
+        "Student Name": "Not Specified"
+      },
+      "tags": [
+        "student",
+        "academic",
+        "certificate",
+        "education",
+        "transcript"
+      ],
+      "aiStatus": "done",
+      "label": "",
+      "isPasswordProtected": false,
+      "documentPassword": null,
+      "createdAt": "2026-04-21T05:38:53.709Z",
+      "updatedAt": "2026-04-21T05:38:54.980Z"
+    }
   ],
   "emergencyDocuments": [
-    {}
+    {},
+    "963a25e4-b081-4892-a011-d88c49d78662"
+  ],
+  "pins": [
+    {
+      "_id": "a1fe8d6c-106e-4b4f-961c-b0e480f9ccc5",
+      "userId": "8511d2f3-ec7d-4519-9aa2-36e3dca94acd",
+      "documentId": "af53db31-0cac-4d43-8a8f-01ea165bf934",
+      "pinnedAt": "2026-04-21T05:38:01.666Z"
+    },
+    {
+      "_id": "c5a054bd-3931-4b65-b353-b2f75fd2a1d4",
+      "userId": "8511d2f3-ec7d-4519-9aa2-36e3dca94acd",
+      "documentId": "7f712427-dd46-4888-914c-fc50c9ac1ee5",
+      "pinnedAt": "2026-04-21T05:38:03.633Z"
+    }
   ]
 }

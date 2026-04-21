@@ -63,6 +63,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Pin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { getEmergencyDocs, removeFromEmergency } from '../api/emergency';
@@ -72,7 +73,7 @@ const roleStyles = {
   member: 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-400/30',
 };
 
-export default function Navbar({ onAddMember, familyRefreshKey = 0 }) {
+export default function Navbar({ onAddMember, familyRefreshKey = 0, pinCount = 0 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [familyMembers, setFamilyMembers] = useState([]);
@@ -268,6 +269,23 @@ export default function Navbar({ onAddMember, familyRefreshKey = 0 }) {
                   )}
                 </div>
               )}
+
+              {pinCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/dashboard#pinned');
+                    window.setTimeout(() => {
+                      document.getElementById('pinned')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 50);
+                  }}
+                  className="hidden items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-200 transition hover:bg-amber-500/20 hover:text-white sm:flex"
+                  title="Pinned documents"
+                >
+                  <Pin className="h-4 w-4" fill="currentColor" />
+                  <span>{pinCount}</span>
+                </button>
+              ) : null}
 
               <div className="hidden text-right sm:block">
                 <div className="text-sm font-semibold text-white">{user.name}</div>

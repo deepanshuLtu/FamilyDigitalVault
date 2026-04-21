@@ -4,15 +4,23 @@ import api from '../api/axios';
 export default function UploadModal({ open, onClose, onUploaded }) {
   const [file, setFile] = useState(null);
   const [label, setLabel] = useState('');
+  const [protectDocument, setProtectDocument] = useState(false);
+  const [documentPassword, setDocumentPassword] = useState('');
+  const [confirmDocumentPassword, setConfirmDocumentPassword] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [successProtected, setSuccessProtected] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setFile(null);
       setLabel('');
+      setProtectDocument(false);
+      setDocumentPassword('');
+      setConfirmDocumentPassword('');
       setUploading(false);
       setError('');
+      setSuccessProtected(false);
     }
   }, [open]);
 
@@ -26,6 +34,18 @@ export default function UploadModal({ open, onClose, onUploaded }) {
       return;
     }
 
+    if (protectDocument) {
+      if (documentPassword.length < 4) {
+        setError('Document password must be at least 4 characters.');
+        return;
+      }
+
+      if (documentPassword !== confirmDocumentPassword) {
+        setError('Document passwords do not match.');
+        return;
+      }
+    }
+
     setError('');
     setUploading(true);
 
@@ -33,6 +53,8 @@ export default function UploadModal({ open, onClose, onUploaded }) {
       const formData = new FormData();
       formData.append('file', file);
       if (label.trim()) formData.append('label', label.trim());
+      formData.append('isPasswordProtected', protectDocument ? 'true' : 'false');
+      if (protectDocument) formData.append('documentPassword', documentPassword);
 
       const { data } = await api.post('/api/documents/upload', formData, {
         headers: {
@@ -40,6 +62,7 @@ export default function UploadModal({ open, onClose, onUploaded }) {
         },
       });
 
+      setSuccessProtected(protectDocument);
       onUploaded?.(data.document || data);
       onClose?.();
     } catch (err) {
@@ -48,6 +71,12 @@ export default function UploadModal({ open, onClose, onUploaded }) {
       setUploading(false);
     }
   };
+
+  const passwordsMatch =
+    protectDocument &&
+    documentPassword.length >= 4 &&
+    confirmDocumentPassword.length > 0 &&
+    documentPassword === confirmDocumentPassword;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
@@ -88,7 +117,59 @@ export default function UploadModal({ open, onClose, onUploaded }) {
             />
           </label>
 
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={protectDocument}
+                onChange={(e) => setProtectDocument(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-950 text-sky-500 focus:ring-sky-500"
+              />
+              <span>
+                <span className="block font-medium text-slate-200">Protect this document with a password</span>
+                <span className="mt-1 block text-sm text-slate-400">Require a document password before this file opens.</span>
+              </span>
+            </label>
+
+            <div className={`grid transition-all duration-300 ${protectDocument ? 'mt-4 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+              <div className="overflow-hidden">
+                <div className="space-y-4">
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-300">Document Password</span>
+                    <input
+                      type="password"
+                      value={documentPassword}
+                      onChange={(e) => setDocumentPassword(e.target.value)}
+                      placeholder="Enter document password"
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:ring-2 focus:ring-sky-500/20"
+                    />
+                    <span className={`mt-1 block text-xs ${documentPassword.length >= 4 ? 'text-emerald-300' : 'text-slate-500'}`}>
+                      {documentPassword.length}/4 characters minimum
+                    </span>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-300">Confirm Password</span>
+                    <input
+                      type="password"
+                      value={confirmDocumentPassword}
+                      onChange={(e) => setConfirmDocumentPassword(e.target.value)}
+                      placeholder="Confirm document password"
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:ring-2 focus:ring-sky-500/20"
+                    />
+                    {confirmDocumentPassword ? (
+                      <span className={`mt-1 block text-xs font-medium ${passwordsMatch ? 'text-emerald-300' : 'text-rose-300'}`}>
+                        {passwordsMatch ? '✓ Passwords match' : 'Passwords do not match'}
+                      </span>
+                    ) : null}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {error ? <p className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</p> : null}
+          {successProtected ? <p className="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">🔒 Uploaded with password protection.</p> : null}
 
           <div className="flex items-center justify-end gap-3">
             <button

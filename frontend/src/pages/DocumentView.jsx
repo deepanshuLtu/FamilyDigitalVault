@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import api from '../api/axios';
+import { Pin } from 'lucide-react';
 import { addToEmergency, removeFromEmergency, checkEmergency } from '../api/emergency';
+import { checkPin, pinDocument, unpinDocument } from '../api/pins';
+import {
+  checkProtectionStatus,
+  fetchProtectedDocument,
+  removeDocumentPassword,
+  setDocumentPassword,
+} from '../api/documentPassword';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import DocumentPasswordModal from '../components/DocumentPasswordModal';
 
 const Spinner = () => (
   <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -42,19 +50,60 @@ export default function DocumentView() {
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [accessToken, setAccessToken] = useState(null);
+  const [isLocked, setIsLocked] = useState(true);
+  const [protectionStatus, setProtectionStatus] = useState(null);
   const [inEmergency, setInEmergency] = useState(false);
   const [emergencyLoading, setEmergencyLoading] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
 
   useEffect(() => {
     let active = true;
+    const storageKey = `doc-access-${id}`;
 
-    const loadDocument = async () => {
+    const loadDocument = async (token) => {
+      const { data } = await fetchProtectedDocument(id, token);
+      if (!active) return;
+      setDocument(data);
+      setIsLocked(false);
+      setAccessToken(token || null);
+    };
+
+    const bootstrapDocument = async () => {
       setLoading(true);
       setError('');
+      setDocument(null);
+      setProtectionStatus(null);
+      setIsLocked(true);
+
       try {
-        const { data } = await api.get(`/api/documents/${id}`);
-        if (active) setDocument(data);
+        const { data: status } = await checkProtectionStatus(id);
+        if (!active) return;
+        setProtectionStatus(status);
+
+        if (!status.isPasswordProtected) {
+          sessionStorage.removeItem(storageKey);
+          await loadDocument(null);
+          return;
+        }
+
+        const savedToken = sessionStorage.getItem(storageKey);
+        if (savedToken) {
+          try {
+            await loadDocument(savedToken);
+            return;
+          } catch (err) {
+            if (err?.response?.status === 403 && err?.response?.data?.requiresPassword) {
+              sessionStorage.removeItem(storageKey);
+            } else {
+              throw err;
+            }
+          }
+        }
+
+        if (active) setIsLocked(true);
       } catch (err) {
         if (active) setError(err?.response?.data?.message || 'Failed to load document.');
       } finally {
@@ -62,7 +111,7 @@ export default function DocumentView() {
       }
     };
 
-    loadDocument();
+    bootstrapDocument();
 
     return () => {
       active = false;
@@ -76,6 +125,22 @@ export default function DocumentView() {
       .then(({ data }) => setInEmergency(data.inEmergency))
       .catch(() => setInEmergency(false));
   }, [document, user?.role]);
+
+  useEffect(() => {
+    let active = true;
+
+    checkPin(id)
+      .then(({ data }) => {
+        if (active) setIsPinned(Boolean(data.isPinned));
+      })
+      .catch(() => {
+        if (active) setIsPinned(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
 
   const handleEmergencyToggle = async () => {
     if (!document || user?.role !== 'admin') return;
@@ -98,6 +163,52 @@ export default function DocumentView() {
     }
   };
 
+  const handlePinToggle = async () => {
+    if (!document) return;
+
+    const previous = isPinned;
+    setPinLoading(true);
+    setActionMessage('');
+    setIsPinned(!previous);
+
+    try {
+      if (previous) {
+        await unpinDocument(document._id);
+        setActionMessage('Document unpinned');
+      } else {
+        await pinDocument(document._id);
+        setActionMessage('Document pinned');
+      }
+    } catch (err) {
+      if (!previous && err?.response?.status === 409) {
+        setIsPinned(true);
+        setActionMessage('Document pinned');
+      } else {
+        setIsPinned(previous);
+        setActionMessage(err?.response?.data?.message || 'Failed to update pin');
+      }
+    } finally {
+      setPinLoading(false);
+    }
+  };
+
+  const handlePasswordUnlock = async (token) => {
+    setLoading(true);
+    setError('');
+    try {
+      const { data } = await fetchProtectedDocument(id, token);
+      sessionStorage.setItem(`doc-access-${id}`, token);
+      setAccessToken(token);
+      setDocument(data);
+      setIsLocked(false);
+    } catch (err) {
+      sessionStorage.removeItem(`doc-access-${id}`);
+      setError(err?.response?.data?.message || 'Failed to load document.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fileUrl = useMemo(() => {
     if (!document?.filePath) return '';
     return `http://localhost:5000/uploads/${document.filePath}`;
@@ -109,6 +220,10 @@ export default function DocumentView() {
   }, [document]);
 
   const tags = Array.isArray(document?.tags) ? document.tags : [];
+  const uploaderId = document?.uploadedBy?._id || document?.uploadedBy?.id || document?.uploadedBy;
+  const canManagePassword =
+    Boolean(document && user?.role === 'admin') ||
+    Boolean(document && user?._id && uploaderId && String(user._id) === String(uploaderId));
 
   return (
     <div className="min-h-screen">
@@ -138,12 +253,40 @@ export default function DocumentView() {
               {emergencyLoading ? 'Saving...' : inEmergency ? 'Remove from Emergency' : 'Add to Emergency'}
             </button>
           )}
+          {document ? (
+            <button
+              type="button"
+              disabled={pinLoading}
+              onClick={handlePinToggle}
+              className={`flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                isPinned
+                  ? 'border-amber-400/30 bg-amber-500/20 text-amber-100 hover:bg-amber-500/30'
+                  : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              {pinLoading ? (
+                <Spinner />
+              ) : (
+                <Pin className="h-4 w-4" fill={isPinned ? 'currentColor' : 'none'} />
+              )}
+              {pinLoading ? 'Saving...' : isPinned ? 'Pinned' : 'Pin'}
+            </button>
+          ) : null}
         </div>
         {actionMessage && (
-          <p className={`mb-4 text-sm font-medium ${actionMessage.includes('failed') ? 'text-rose-300' : 'text-emerald-300'}`}>
+          <p className={`mb-4 text-sm font-medium ${actionMessage.toLowerCase().includes('failed') ? 'text-rose-300' : 'text-emerald-300'}`}>
             {actionMessage}
           </p>
         )}
+
+        {isLocked && protectionStatus?.isPasswordProtected ? (
+          <DocumentPasswordModal
+            documentId={id}
+            documentName={protectionStatus.documentName}
+            onSuccess={handlePasswordUnlock}
+            onCancel={() => navigate('/dashboard')}
+          />
+        ) : null}
 
         {loading ? (
           <div className="flex items-center justify-center rounded-3xl border border-white/10 bg-white/5 py-20 text-slate-300">
@@ -265,6 +408,26 @@ export default function DocumentView() {
                     <MetaRow label="File path" value={document.filePath} />
                   </div>
                 </Panel>
+
+                {canManagePassword ? (
+                  <PasswordProtectionPanel
+                    document={document}
+                    onSetPassword={async (password) => {
+                      await setDocumentPassword(document._id, password);
+                      setDocument((prev) => ({ ...prev, isPasswordProtected: true }));
+                      setProtectionStatus((prev) => ({ ...(prev || {}), isPasswordProtected: true }));
+                      setActionMessage('Document password set successfully');
+                    }}
+                    onRemovePassword={async (password) => {
+                      await removeDocumentPassword(document._id, password);
+                      sessionStorage.removeItem(`doc-access-${document._id}`);
+                      setAccessToken(null);
+                      setDocument((prev) => ({ ...prev, isPasswordProtected: false }));
+                      setProtectionStatus((prev) => ({ ...(prev || {}), isPasswordProtected: false }));
+                      setActionMessage('Password protection removed');
+                    }}
+                  />
+                ) : null}
               </div>
             </section>
           </div>
@@ -280,6 +443,171 @@ function Panel({ title, children }) {
       <h3 className="text-lg font-semibold text-white">{title}</h3>
       <div className="mt-4">{children}</div>
     </section>
+  );
+}
+
+function PasswordProtectionPanel({ document, onSetPassword, onRemovePassword }) {
+  const [mode, setMode] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const resetForm = () => {
+    setMode('');
+    setPassword('');
+    setConfirmPassword('');
+    setBusy(false);
+    setError('');
+  };
+
+  const handleSet = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await onSetPassword(password);
+      setMessage('Password protection is now enabled.');
+      resetForm();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to set password.');
+      setBusy(false);
+    }
+  };
+
+  const handleRemove = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+
+    if (!password) {
+      setError('Enter the current document password.');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await onRemovePassword(password);
+      setMessage('Password protection removed.');
+      resetForm();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to remove password protection.');
+      setBusy(false);
+    }
+  };
+
+  const passwordsMatch = password && confirmPassword && password === confirmPassword;
+
+  return (
+    <Panel title="Password Protection">
+      <div className="space-y-4">
+        <p className="text-sm text-slate-300">
+          {document.isPasswordProtected ? '🔒 This document is password protected.' : 'This document is not password protected.'}
+        </p>
+
+        {!mode ? (
+          <button
+            type="button"
+            onClick={() => {
+              setMessage('');
+              setError('');
+              setMode(document.isPasswordProtected ? 'remove' : 'set');
+            }}
+            className={`rounded-2xl px-4 py-3 font-semibold transition ${
+              document.isPasswordProtected
+                ? 'border border-rose-400/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20'
+                : 'bg-sky-500 text-white hover:bg-sky-400'
+            }`}
+          >
+            {document.isPasswordProtected ? 'Remove Password' : 'Set Password'}
+          </button>
+        ) : null}
+
+        {mode === 'set' ? (
+          <form onSubmit={handleSet} className="space-y-3">
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Document password"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:ring-2 focus:ring-sky-500/20"
+            />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Confirm password"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:ring-2 focus:ring-sky-500/20"
+            />
+            {confirmPassword ? (
+              <p className={`text-sm font-medium ${passwordsMatch ? 'text-emerald-300' : 'text-rose-300'}`}>
+                {passwordsMatch ? '✓ Passwords match' : 'Passwords do not match'}
+              </p>
+            ) : null}
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-2xl bg-sky-500 px-4 py-2 font-semibold text-white hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busy ? 'Saving...' : 'Save Password'}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 font-medium text-slate-200 hover:bg-white/10"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : null}
+
+        {mode === 'remove' ? (
+          <form onSubmit={handleRemove} className="space-y-3">
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Current document password"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:ring-2 focus:ring-sky-500/20"
+            />
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-2 font-semibold text-rose-200 hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busy ? 'Removing...' : 'Confirm Remove'}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 font-medium text-slate-200 hover:bg-white/10"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : null}
+
+        {error ? <p className="text-sm font-medium text-rose-300">{error}</p> : null}
+        {message ? <p className="text-sm font-medium text-emerald-300">{message}</p> : null}
+      </div>
+    </Panel>
   );
 }
 

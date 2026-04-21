@@ -1,7 +1,7 @@
 const express = require("express");
 const { protect } = require("../middleware/auth");
 const { getDatabase, mutateDatabase } = require("../data/database");
-const { getDocumentById } = require("../data/documents");
+const { sanitizeDocument } = require("../data/documents");
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ const buildUploader = (user) => {
 };
 
 const populateDocument = (document, users) => ({
-  ...document,
+  ...sanitizeDocument(document),
   uploadedBy: buildUploader(users.find((user) => user._id === document.uploadedBy)),
 });
 

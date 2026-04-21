@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pin } from 'lucide-react';
 import api from '../api/axios';
 import { getEmergencyDocs, addToEmergency, removeFromEmergency } from '../api/emergency';
+import { getPins, pinDocument, unpinDocument } from '../api/pins';
 import Navbar from '../components/Navbar';
 import DocumentCard from '../components/DocumentCard';
 import UploadModal from '../components/UploadModal';
@@ -94,16 +96,29 @@ export default function Dashboard() {
   const [memberActionId, setMemberActionId] = useState('');
   const [emergencyIds, setEmergencyIds] = useState(new Set());
   const [emergencyLoading, setEmergencyLoading] = useState(false);
+  const [pinnedDocuments, setPinnedDocuments] = useState([]);
+  const [pinnedDocumentIds, setPinnedDocumentIds] = useState(new Set());
+  const [pinLoadingIds, setPinLoadingIds] = useState(new Set());
+  const [pinError, setPinError] = useState('');
 
   const loadDocuments = useCallback(async () => {
     setLoading(true);
     setError('');
 
     try {
-      const { data } = await api.get('/api/documents');
-      setDocuments(Array.isArray(data) ? data : []);
+      const [{ data }, { data: pinsData }] = await Promise.all([
+        api.get('/api/documents'),
+        getPins(),
+      ]);
+      const nextDocs = Array.isArray(data) ? data : [];
+      const nextPins = Array.isArray(pinsData?.pins) ? pinsData.pins : [];
+      const nextPinnedDocuments = nextPins.map((pin) => pin.document).filter(Boolean);
+
+      setDocuments(nextDocs);
+      setPinnedDocuments(nextPinnedDocuments);
+      setPinnedDocumentIds(new Set(nextPinnedDocuments.map((doc) => doc._id)));
       if (!query.trim()) {
-        setDisplayedDocs(Array.isArray(data) ? data : []);
+        setDisplayedDocs(nextDocs);
       }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load documents.');
@@ -137,6 +152,12 @@ export default function Dashboard() {
   useEffect(() => {
     loadEmergencyIds();
   }, [loadEmergencyIds]);
+
+  useEffect(() => {
+    if (!loading && window.location.hash === '#pinned' && pinnedDocuments.length > 0) {
+      document.getElementById('pinned')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [loading, pinnedDocuments.length]);
   
   
 
@@ -181,9 +202,68 @@ export default function Dashboard() {
       await api.delete(`/api/documents/${id}`);
       setDocuments((prev) => prev.filter((doc) => doc._id !== id));
       setDisplayedDocs((prev) => prev.filter((doc) => doc._id !== id));
+      setPinnedDocuments((prev) => prev.filter((doc) => doc._id !== id));
+      setPinnedDocumentIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       setRefreshTick((t) => t + 1);
     } catch (err) {
       alert(err?.response?.data?.message || 'Delete failed.');
+    }
+  };
+
+  const handlePinToggle = async (documentId, currentlyPinned) => {
+    const targetDoc =
+      documents.find((doc) => doc._id === documentId) ||
+      displayedDocs.find((doc) => doc._id === documentId) ||
+      pinnedDocuments.find((doc) => doc._id === documentId);
+
+    setPinError('');
+    setPinLoadingIds((prev) => new Set(prev).add(documentId));
+
+    const previousPinnedDocuments = pinnedDocuments;
+    const previousPinnedIds = pinnedDocumentIds;
+
+    if (currentlyPinned) {
+      setPinnedDocumentIds((prev) => {
+        const next = new Set(prev);
+        next.delete(documentId);
+        return next;
+      });
+      setPinnedDocuments((prev) => prev.filter((doc) => doc._id !== documentId));
+    } else {
+      setPinnedDocumentIds((prev) => new Set(prev).add(documentId));
+      if (targetDoc) {
+        setPinnedDocuments((prev) => [targetDoc, ...prev.filter((doc) => doc._id !== documentId)]);
+      }
+    }
+
+    try {
+      if (currentlyPinned) {
+        await unpinDocument(documentId);
+      } else {
+        await pinDocument(documentId);
+      }
+    } catch (err) {
+      if (!currentlyPinned && err?.response?.status === 409) {
+        setPinnedDocumentIds((prev) => new Set(prev).add(documentId));
+        if (targetDoc) {
+          setPinnedDocuments((prev) => [targetDoc, ...prev.filter((doc) => doc._id !== documentId)]);
+        }
+        return;
+      }
+
+      setPinnedDocuments(previousPinnedDocuments);
+      setPinnedDocumentIds(previousPinnedIds);
+      setPinError(currentlyPinned ? 'Failed to unpin document, please try again.' : 'Failed to pin document, please try again.');
+    } finally {
+      setPinLoadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(documentId);
+        return next;
+      });
     }
   };
 
@@ -301,6 +381,7 @@ export default function Dashboard() {
       <Navbar
         onAddMember={user?.role === 'admin' ? () => setAddMemberOpen(true) : undefined}
         familyRefreshKey={refreshTick}
+        pinCount={pinnedDocumentIds.size}
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -373,6 +454,11 @@ export default function Dashboard() {
         {error ? (
           <div className="mt-6 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-rose-200">
             {error}
+          </div>
+        ) : null}
+        {pinError ? (
+          <div className="mt-6 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-rose-200">
+            {pinError}
           </div>
         ) : null}
         {user?.familyId && (
@@ -451,43 +537,83 @@ export default function Dashboard() {
           </section>
         ) : null}
 
-        <section className="mt-8">
+        <section className="mt-8 space-y-8">
           {loading ? (
             <div className="flex items-center justify-center rounded-3xl border border-white/10 bg-white/5 py-20 text-slate-300">
               <div className="flex items-center gap-3">
                 <Spinner /> Loading documents...
               </div>
             </div>
-          ) : displayedDocs.length === 0 ? (
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-slate-300">
-              <p className="text-xl font-semibold text-white">No documents found.</p>
-              <p className="mt-2 text-sm text-slate-400">
-                Upload a PDF or image to start building the vault, or try a different search.
-              </p>
-              <button
-                type="button"
-                onClick={() => setUploadOpen(true)}
-                className="mt-6 rounded-2xl bg-sky-500 px-5 py-3 font-semibold text-white transition hover:bg-sky-400"
-              >
-                Upload your first document
-              </button>
-            </div>
           ) : (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {displayedDocs.map((doc) => (
-                <DocumentCard
-                  key={doc._id}
-                  document={doc}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
+            <>
+              {pinnedDocuments.length > 0 ? (
+                <div id="pinned" className="scroll-mt-24">
+                  <SectionLabel icon={<Pin className="h-4 w-4 text-amber-300" fill="currentColor" />} label="Pinned" />
+                  <div className="mt-4 flex snap-x gap-5 overflow-x-auto pb-2">
+                    {pinnedDocuments.map((doc) => (
+                      <div key={doc._id} className="min-w-[280px] max-w-sm flex-1 snap-start sm:min-w-[340px]">
+                        <DocumentCard
+                          document={doc}
+                          onDelete={handleDelete}
+                          isPinned={pinnedDocumentIds.has(doc._id)}
+                          onPinToggle={handlePinToggle}
+                          pinLoading={pinLoadingIds.has(doc._id)}
+                          variant="pinned"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <SectionLabel label="All Documents" />
+                {displayedDocs.length === 0 ? (
+                  <div className="mt-4 rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-slate-300">
+                    <p className="text-xl font-semibold text-white">No documents found.</p>
+                    <p className="mt-2 text-sm text-slate-400">
+                      Upload a PDF or image to start building the vault, or try a different search.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setUploadOpen(true)}
+                      className="mt-6 rounded-2xl bg-sky-500 px-5 py-3 font-semibold text-white transition hover:bg-sky-400"
+                    >
+                      Upload your first document
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    {displayedDocs.map((doc) => (
+                      <DocumentCard
+                        key={doc._id}
+                        document={doc}
+                        onDelete={handleDelete}
+                        isPinned={pinnedDocumentIds.has(doc._id)}
+                        onPinToggle={handlePinToggle}
+                        pinLoading={pinLoadingIds.has(doc._id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </section>
       </main>
 
       <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} onUploaded={handleUploaded} />
       <AddMemberModal open={addMemberOpen} onClose={() => setAddMemberOpen(false)} />
+    </div>
+  );
+}
+
+function SectionLabel({ icon, label }) {
+  return (
+    <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
+      {icon ? <span className="inline-flex items-center">{icon}</span> : null}
+      <span>{label}</span>
+      <span className="h-px flex-1 bg-white/10" />
     </div>
   );
 }

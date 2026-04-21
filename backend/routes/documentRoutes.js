@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const path = require("path");
 const fs = require("fs");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const {
   createDocument,
   deleteDocumentById,
@@ -10,7 +12,7 @@ const {
   listDocuments,
   updateDocumentById,
 } = require("../data/documents");
-const { getDatabase, mutateDatabase } = require("../data/database");
+const { mutateDatabase } = require("../data/database");
 const { protect } = require("../middleware/auth");
 const upload = require("../middleware/upload");
 const { processDocumentWithAI } = require("../services/groqService");
@@ -34,6 +36,18 @@ router.post("/upload", protect, upload.single("file"), async (req, res) => {
     }
 
     const { label } = req.body;
+    const wantsPasswordProtection = req.body.isPasswordProtected === "true";
+    let hashedDocumentPassword = null;
+
+    if (wantsPasswordProtection) {
+      const plainDocumentPassword = String(req.body.documentPassword || "");
+      if (plainDocumentPassword.length < 4) {
+        return res.status(400).json({ message: "Document password must be at least 4 characters" });
+      }
+
+      // Security: document passwords use bcrypt salt rounds 10, matching user passwords.
+      hashedDocumentPassword = await bcrypt.hash(plainDocumentPassword, 10);
+    }
 
     // Save document record immediately (AI fills in later)
     const doc = await createDocument({
@@ -44,6 +58,8 @@ router.post("/upload", protect, upload.single("file"), async (req, res) => {
       fileType: req.file.mimetype,
       fileSize: req.file.size,
       label: label || "",
+      isPasswordProtected: wantsPasswordProtection,
+      documentPassword: hashedDocumentPassword,
       aiStatus: "pending",
     });
 
@@ -95,6 +111,29 @@ router.get("/:id", protect, async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
+    if (rawDoc.isPasswordProtected) {
+      const token = req.headers["x-doc-access-token"];
+
+      try {
+        if (!token) throw new Error("Missing document access token");
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const isValidToken =
+          decoded.documentId === req.params.id &&
+          decoded.userId === req.user._id &&
+          decoded.purpose === "doc-access";
+
+        // Security: document access tokens are scoped to one user and one document.
+        if (!isValidToken) throw new Error("Invalid document access token");
+      } catch (tokenError) {
+        return res.status(403).json({
+          message: "Document is password protected",
+          requiresPassword: true,
+          documentId: req.params.id,
+        });
+      }
+    }
+
     const doc = await getDocumentById(req.params.id);
     res.json(doc);
   } catch (err) {
@@ -131,12 +170,16 @@ router.delete("/:id", protect, async (req, res) => {
 
     await deleteDocumentById(req.params.id);
 
-    // Clean up: remove document ID from emergencyDocuments
+    // Clean up document references across shared lists and per-user pins.
     await mutateDatabase(async (db) => {
       const emergencyDocs = db.emergencyDocuments || [];
       const index = emergencyDocs.indexOf(req.params.id);
       if (index !== -1) {
         db.emergencyDocuments.splice(index, 1);
+      }
+
+      if (Array.isArray(db.pins)) {
+        db.pins = db.pins.filter((pin) => pin.documentId !== req.params.id);
       }
     });
 
